@@ -16,29 +16,39 @@ export default class DeterministicFiniteStateMachine {
     return this.transitions[state][symbol];
   }
 
-  isAcceptState(state) {
-    return this.acceptStates.includes(state);
-  }
-
+  /**
+   * ORIGINAL SUBMITTED ANSWER BEFORE FORK DELETION
+   * @returns whether or not the string the fsm accepts the string
+   */
   accepts(string, state = this.startState) {
-    const nextState = this.transition(state, string.charAt(0));
-
-    return (string.length === 0) ? this.isAcceptState(state) :
-                                   this.accepts(string.substr(1), nextState);
-  }
-
-/*
-  accepts(string, state = this.startState) {
-    let currentString = string;
-    let currentState = state;
-
-    while(currentString.length > 0) {
-      currentState = this.transition(currentState, currentString.charAt(0));
-      currentString = currentString.substr(1);
+    for (let i = 0; i < string.length; i++) {
+      state = this.transition(state, string.charAt(i));
     }
-
-    return this.isAcceptState(currentState);
+    return state.includes(this.acceptStates);
   }
-*/
 
+  // RECURSIVE ACCEPTANCE SOLUTION
+  // isAcceptState(state) {
+  //   return this.acceptStates.includes(state);
+  // }
+
+  // accepts(string, state = this.startState) {
+  //   const nextState = this.transition(state, string.charAt(0));
+
+  //   return (string.length === 0) ? this.isAcceptState(state) :
+  //                                  this.accepts(string.substr(1), nextState);
+  // }
+
+  // ITERATIVE ACCEPTANCE SOLUTION
+  // accepts(string, state = this.startState) {
+  //   let currentString = string;
+  //   let currentState = state;
+
+  //   while(currentString.length > 0) {
+  //     currentState = this.transition(currentState, currentString.charAt(0));
+  //     currentString = currentString.substr(1);
+  //   }
+
+  //   return this.isAcceptState(currentState);
+  // }
 }
