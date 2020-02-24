@@ -1,7 +1,6 @@
 {
   "name": "cmsi-583-fsm",
   "version": "1.0.0",
-  "type": "module",
   "main": "index.js",
   "author": "Masahji C. Stewart",
   "license": "LMU",
