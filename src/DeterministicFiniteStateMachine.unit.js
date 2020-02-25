@@ -271,7 +271,7 @@ describe('examples', () => {
 describe('cross product', () => {
   for (const [key1, desc1] of Object.entries(tests)) {
     for (const [key2, desc2] of Object.entries(tests)) {
-      if(key1 != key2) {
+      if (key1 !== key2) {
 
 
         describe(`dfa1: ${key1} x dfa2: ${key2}`, () => {
@@ -286,7 +286,7 @@ describe('cross product', () => {
               ...desc2.tests.accepts,
               ...desc2.tests.rejects,
             ];
-            
+
             const fsm = union(dfa1, dfa2);
             for (const string of allTests) {
               const expectedResult = dfa1.accepts(string) || dfa2.accepts(string);
@@ -304,7 +304,7 @@ describe('cross product', () => {
               ...desc2.tests.accepts,
               ...desc2.tests.rejects,
             ];
-            
+
             const fsm = intersection(dfa1, dfa2);
             for (const string of allTests) {
               const expectedResult = dfa1.accepts(string) && dfa2.accepts(string);
@@ -322,7 +322,7 @@ describe('cross product', () => {
               ...desc2.tests.accepts,
               ...desc2.tests.rejects,
             ];
-            
+
             const fsm = minus(dfa1, dfa2);
             for (const string of allTests) {
               const expectedResult = dfa1.accepts(string) && !dfa2.accepts(string);
@@ -343,13 +343,13 @@ describe('minimize', () => {
         const dfa = new DeterministicFiniteStateMachine(description);
         const minDfa = minimize(dfa);
 
-        if(minimizable) {
+        if (minimizable) {
           expect(minDfa.states().size).toBeLessThan(dfa.states().size);
         } else {
           expect(minDfa.states().size).toEqual(dfa.states().size);
         }
 
-        for(const string of [...tests.accepts, ...tests.rejects]) {
+        for (const string of [...tests.accepts, ...tests.rejects]) {
           expect(dfa.accepts(string)).toEqual(minDfa.accepts(string));
         }
     });
