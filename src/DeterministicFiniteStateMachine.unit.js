@@ -100,10 +100,10 @@ const tests = {
           0: 'dead1',
           1: 'dead1',
         },
-        dead11: {
-          0: 'dead1',
-          1: 'dead1',
-        },
+        // dead11: {
+        //   0: 'dead1',
+        //   1: 'dead1',
+        // },
         seen11: {
           0: 'seen11',
           1: 'seen11',
