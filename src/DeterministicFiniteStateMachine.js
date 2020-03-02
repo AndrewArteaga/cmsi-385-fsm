@@ -53,7 +53,7 @@ export function cross(dfa1, dfa2, accepts = (dfa1State, dfa2State) => true) {
   const transitions = {};
   const alphabet = new Set([...dfa1.alphabet(), ...dfa2.alphabet()]);
 
-  // A function which returns a state name for a state in machine 1 and a state in machine 2 
+  // A function which returns a state name for a state in machine 1 and a state in machine 2
   const stateName = (state1, state2) => `m1:${state1}xm2:${state2}`;
 
   const startState = stateName(dfa1.startState, dfa2.startState);
@@ -103,7 +103,7 @@ export function minus(dfa1, dfa2) {
 
 
 export function minimize(dfa) {
-  // unreachables later time
+  // unreachables tbd at a later time
   // let reachable_states := {q0};
   // let new_states := {q0};
   // do {
@@ -119,7 +119,6 @@ export function minimize(dfa) {
   // unreachable_states := Q \ reachable_states;
 
   // init answer dfa (minimized dfa)
-
   // all states
   const Q = new Set(dfa.states());
   // accept states
@@ -128,12 +127,10 @@ export function minimize(dfa) {
   const Q_diff_F = new Set([...Q].filter(x => !F.has(x)));
   // paritition initialized by adding accepting/rejecting states
   let P = new Set();
-  P.add(Q_diff_F);
   P.add(F);
-
+  P.add(Q_diff_F);
   // under assumption we are working with complete dfa, here is all of the symbols in the alphabet
   // const big_curly_E = new Set([...dfa.alphabet()]);
-
   // our working set filled with all (A,x) for every x in the alphabet
   let W = new Set();
   for (let individual_accept_State of dfa.acceptStates) {
@@ -141,13 +138,13 @@ export function minimize(dfa) {
       W.add([individual_accept_State, symbol_of_alphabet]);
     }
   }
-  console.log('initial P =>', P, ' \n initial W =>', W);
+  // console.log('initial P =>', P, ' \n initial W =>', W);
   while (W.size !== 0) {
     // remove an arbitrary element (A, x) from W
     let arbitrary_elment_of_W = Array.from(W);
     let A = arbitrary_elment_of_W[Math.floor(Math.random() * arbitrary_elment_of_W.length)];
     W.delete(A);
-    console.log('removing A ', A, ' \n from w, w is ', W);
+    // console.log('removing A ', A, ' \n from w, w is ', W);
     let X = new Set();
     const a = A[0];
     const x = A[1];
@@ -159,47 +156,94 @@ export function minimize(dfa) {
       }
     }
     // init new set X
-    console.log('current list of paths in =>', X);
+    // console.log('current list of paths in =>', X);
     for (const Y of P) {
-      console.log('X =>', X);
-      console.log('Y =>', Y);
+      // console.log('X =>', X);
+      // console.log('Y =>', Y);
       let X_intersect_Y = new Set([...X].filter(Z => Y.has(Z)));
       let Y_diff_X = new Set([...Y].filter(Z => !X.has(Z)));
-      console.log('x intersect y =>', X_intersect_Y, 'Y - X =>', Y_diff_X);
-      let y_comma_x = Array.from(Y).concat(x);
-      let X_intersect_Y_comma_x = Array.from(X_intersect_Y).concat(x);
-      let Y_diff_X_comma_x = Array.from(Y_diff_X).concat(x);
-      if (X_intersect_Y.size !== 0 && Y_diff_X.size !== 0) {
+      // console.log('x intersect y =>', X_intersect_Y, ' \n Y - X =>', Y_diff_X);
+      // console.log(Y.size);
+      // console.log(new Set([...Y, ...Y_diff_X]).size);
+      // console.log([...Y, ...X_intersect_Y].size);
+      if (X_intersect_Y.size > 0 && Y_diff_X.size > 0) {
+        if (Y.size === new Set([...Y, ...Y_diff_X]).size && Y.size === new Set([...Y, ...X_intersect_Y]).size) {
+          console.log('they do');
+          break;
+        }
         P.delete(Y);
         P.add(X_intersect_Y);
         P.add(Y_diff_X);
-        console.log('updated P =>', P);
+        // console.log('updated P =>', P);
         // console.log(' (A, x) form of Y,x =>', Array.from(Y).concat(x));
         // console.log(' (A, x) form of (X intersect Y, x) =>', Array.from(X_intersect_Y).concat(x));
         // console.log(' (A, x) form of (Y - X, x) =>', Array.from(Y_diff_X).concat(x));
-        console.log('does w contain y??? ',W.has(y_comma_x));
-        if (W.has(y_comma_x)) {
-          W.delete(y_comma_x);
-          W.add(X_intersect_Y_comma_x);
-          W.add(Y_diff_X_comma_x);
-          console.log('updated W =>', W);
-        } else {
-          if (X_intersect_Y.size <= Y_diff_X.size) {
+        for (const symbol of dfa.alphabet()) {
+          let y_comma_x = Array.from(Y).concat(symbol);
+          let X_intersect_Y_comma_x = Array.from(X_intersect_Y).concat(symbol);
+          let Y_diff_X_comma_x = Array.from(Y_diff_X).concat(symbol);
+          // console.log('does w contain y??? ', W.has(y_comma_x), '\n' , W);
+          if (W.has(y_comma_x)) {
+            W.delete(y_comma_x);
             W.add(X_intersect_Y_comma_x);
-            console.log('updated W =>', W);
-          } else {
             W.add(Y_diff_X_comma_x);
-            console.log('updated W =>', W);
+            // console.log('updated W =>', W);
+          } else {
+            // console.log('X_intersect_Y', X_intersect_Y.size, ' \n Y_diff_X', Y_diff_X.size);
+            if (X_intersect_Y.size <= Y_diff_X.size) {
+              W.add(X_intersect_Y_comma_x);
+              // console.log('updated W =>', W);
+            } else {
+              W.add(Y_diff_X_comma_x);
+              // console.log('updated W =>', W);
+            }
           }
         }
       }
     }
   }
   console.log('States of minimized dfa are now in P =>', P);
-  const acceptStates = [];
-  const transitions = {};
-  const startState = '';
-  const minimized_dfa = new DeterministicFiniteStateMachine({acceptStates, startState, transitions});
+  let acceptStates = [];
+  let transitions = {};
+  let startState = '';
+  for (let [key, value] of Object.entries(dfa.transitions)) {
+    // console.log(key);
+    // console.log(value);
+    for (let [k, v] of Object.entries(value)) {
+      // console.log(k);
+      //  console.log(v);
+
+    }
+  }
+
+  for (const e of P) {
+    for (const newstate of e) {
+      // determining new start state
+      if (newstate ===  dfa.startState) {
+        startState = Array.from(e).join().replace(/,/g, '');
+      }
+      // determining new accept state
+      for (let prev_accept_state of dfa.acceptStates) {
+        if (prev_accept_state === newstate) {
+          acceptStates.push(Array.from(e).join().replace(/,/g, ''));
+          break;
+        }
+      }
+      // let temp = {};
+      // for (const symbol of dfa.alphabet()) {
+      //   temp[symbol] = '';
+      // }
+      // transitions[Array.from(e).join().replace(/,/g, '')] = temp;
+    }
+  }
+  // remove duplicate entries
+  acceptStates = acceptStates.filter( function( item, index, inputArray ) {
+    return inputArray.indexOf(item) === index;
+  });
+  // console.log('new start state =>', startState);
+  // console.log('new accept states =>', acceptStates);
+  // console.log('new transitions =>', transitions);
+  // const minimized_dfa = new DeterministicFiniteStateMachine({transitions, startState, acceptStates});
   // console.log('minimized_dfa =>', minimized_dfa);
   return dfa;
 }
