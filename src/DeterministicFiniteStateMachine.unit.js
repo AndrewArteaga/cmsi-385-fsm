@@ -125,6 +125,52 @@ const tests = {
       ],
     }
   },
+  startsWith11OrLambda: {
+    minimizable: true,
+    description: {
+      transitions: {
+        start: {
+          0: 'dead0',
+          1: 'seen1',
+        },
+        seen1: {
+          0: 'dead1',
+          1: 'seen11',
+        },
+        dead0: {
+          0: 'dead0',
+          1: 'dead0',
+        },
+        dead1: {
+          0: 'dead1',
+          1: 'dead1',
+        },
+        dead11: {
+          0: 'dead1',
+          1: 'dead1',
+        },
+        seen11: {
+          0: 'seen11',
+          1: 'seen11',
+        }
+      },
+      startState: 'start',
+      acceptStates: ['seen11', 'start'],
+    },
+
+    tests: {
+      accepts: [
+        '',
+        '110',
+        '11000',
+        '11',
+      ],
+      rejects: [
+        '1000',
+        '1',
+      ],
+    }
+  },
   divBy3: {
     description: {
       transitions: {
