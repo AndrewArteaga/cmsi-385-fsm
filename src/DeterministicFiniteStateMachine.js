@@ -182,7 +182,6 @@ export function minimize(dfa) {
     result.push(Array.from(new_state).join(','));
   }
   const polished_minimized_dfa_states = new Set(result.filter(Boolean));
-  console.log(polished_minimized_dfa_states);
   // create the new minimized dfa
   let acceptStates = [];
   let transitions = {};
@@ -192,7 +191,7 @@ export function minimize(dfa) {
     if (e.includes(dfa.startState)) {
       startState = e;
     }
-    // determining new accept state
+    // determining new accept states
     for (let prev_accept_state of dfa.acceptStates) {
       if (e.includes(prev_accept_state)) {
         acceptStates.push(e);
@@ -200,36 +199,22 @@ export function minimize(dfa) {
       }
     }
   }
-  // for (const e of P) {
-  //   let temp = {};
-  //   for (let [key, value] of Object.entries(dfa.transitions)) {
-  //     for (let [k, v] of Object.entries(value)) {
-  //       for (const symbol of dfa.alphabet()) {
-  //         temp[symbol] = [...Array.from(P).find(i => i.has(v))].join().replace(/,/g, ',');
-  //         // [...Array.from(P).find(v => v.has(value[symbol]))].join().replace(/,/g, ',')
-  //         // console.log('ung', [...Array.from(P).find(i => i.has(v))].join().replace(/,/g, ','));
-  //         //P.get(P.find(v => v.has(value)));
-  //         //break;
-  //         console.log(Array.from(e).join().replace(/,/g, ','));
-  //         console.log(temp[symbol]);
-  //       }
-  //       transitions[Array.from(e).join().replace(/,/g, ',')] = temp;
-  //       console.log(transitions[Array.from(e).join().replace(/,/g, ',')]);
-  //       // break;
-  //     }
-  //   }
-    // transitions[Array.from(e).join().replace(/,/g, ',')] = temp;
-  // }
-  // console.log(dfa.transitions);
-
-  // remove duplicate entries
-  acceptStates = acceptStates.filter( function( item, index, inputArray ) {
-    return inputArray.indexOf(item) === index;
-  });
-  console.log('new start state =>', startState);
-  console.log('new accept states =>', acceptStates);
-  // console.log('new transitions =>', transitions);
+  // determining the new transistions
+  for (const e of polished_minimized_dfa_states) {
+    let temp = {};
+    for (const symbol of dfa.alphabet()) {
+      for (const state of dfa.states()) {
+        if (e.includes(state)) {
+          for (const new_state of polished_minimized_dfa_states) {
+            if (new_state.includes(dfa.transitions[state][symbol])) {
+              temp[symbol] = new_state;
+            }
+          }
+        }
+      }
+    }
+    transitions[e] = temp;
+  }
   const minimized_dfa = new DeterministicFiniteStateMachine({transitions, startState, acceptStates});
-  console.log('minimized_dfa =>', minimized_dfa);
-  return dfa;
+  return minimized_dfa;
 }
