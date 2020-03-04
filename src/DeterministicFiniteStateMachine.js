@@ -182,22 +182,21 @@ export function minimize(dfa) {
     result.push(Array.from(new_state).join(','));
   }
   const polished_minimized_dfa_states = new Set(result.filter(Boolean));
+  console.log(polished_minimized_dfa_states);
   // create the new minimized dfa
   let acceptStates = [];
   let transitions = {};
   let startState = '';
-  for (const e of P) {
-    for (const newstate of e) {
-      // determining new start state
-      if (newstate === dfa.startState) {
-        startState = Array.from(e).join().replace(/,/g, ',');
-      }
-      // determining new accept state
-      for (let prev_accept_state of dfa.acceptStates) {
-        if (prev_accept_state === newstate) {
-          acceptStates.push(Array.from(e).join().replace(/,/g, ','));
-          break;
-        }
+  for (const e of polished_minimized_dfa_states) {
+    // determining new start state
+    if (e.includes(dfa.startState)) {
+      startState = e;
+    }
+    // determining new accept state
+    for (let prev_accept_state of dfa.acceptStates) {
+      if (e.includes(prev_accept_state)) {
+        acceptStates.push(e);
+        break;
       }
     }
   }
@@ -227,8 +226,8 @@ export function minimize(dfa) {
   acceptStates = acceptStates.filter( function( item, index, inputArray ) {
     return inputArray.indexOf(item) === index;
   });
-  // console.log('new start state =>', startState);
-  // console.log('new accept states =>', acceptStates);
+  console.log('new start state =>', startState);
+  console.log('new accept states =>', acceptStates);
   // console.log('new transitions =>', transitions);
   const minimized_dfa = new DeterministicFiniteStateMachine({transitions, startState, acceptStates});
   console.log('minimized_dfa =>', minimized_dfa);
