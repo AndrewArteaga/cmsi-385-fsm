@@ -101,141 +101,132 @@ export function minus(dfa1, dfa2) {
     (state1, state2) => dfa1.stateAccepted(state1) && !dfa2.stateAccepted(state2));
 }
 
-
+// done via partitioning, look at this link for better understanding https://www.youtube.com/watch?v=0XaGAkY09Wc
+// assumes dfa is complete
 export function minimize(dfa) {
-  // unreachables tbd at a later time
-  // let reachable_states := {q0};
-  // let new_states := {q0};
-  // do {
-  //     temp := the empty set;
-  //     for each q in new_states do
-  //         for each c in Σ do
-  //             temp := temp ∪ {p such that p = δ(q,c)};
-  //         end;
-  //     end;
-  //     new_states := temp \ reachable_states;
-  //     reachable_states := reachable_states ∪ new_states;
-  // } while (new_states ≠ the empty set);
-  // unreachable_states := Q \ reachable_states;
-
-  // init answer dfa (minimized dfa)
-  // all states
-  const Q = new Set(dfa.states());
-  // accept states
-  const F = new Set(dfa.acceptStates);
-  // reject states
-  const Q_diff_F = new Set([...Q].filter(x => !F.has(x)));
-  // paritition initialized by adding accepting/rejecting states
-  let P = new Set();
-  P.add(F);
-  P.add(Q_diff_F);
-  // under assumption we are working with complete dfa, here is all of the symbols in the alphabet
-  // const big_curly_E = new Set([...dfa.alphabet()]);
-  // our working set filled with all (A,x) for every x in the alphabet
-  let W = new Set();
-  for (let individual_accept_State of dfa.acceptStates) {
-    for (let symbol_of_alphabet of dfa.alphabet()) {
-      W.add([individual_accept_State, symbol_of_alphabet]);
-    }
-  }
-  // console.log('initial P =>', P, ' \n initial W =>', W);
-  while (W.size !== 0) {
-    // remove an arbitrary element (A, x) from W
-    let arbitrary_elment_of_W = Array.from(W);
-    let A = arbitrary_elment_of_W[Math.floor(Math.random() * arbitrary_elment_of_W.length)];
-    W.delete(A);
-    // console.log('removing A ', A, ' \n from w, w is ', W);
-    let X = new Set();
-    const a = A[0];
-    const x = A[1];
-    for (let [key, value] of Object.entries(dfa.transitions)) {
-      for (let [k, v] of Object.entries(value)) {
-        if (a === v && x === k) {
-          X.add(key);
+  // check if two sets are equal
+  function are_they_equal(set_one, set_two) {
+    if (set_one.size !== set_two.size) {
+      return false;
+    } else {
+      for (var element of set_one) {
+        if (!set_two.has(element)) {
+          return false;
         }
       }
     }
-    // init new set X
-    // console.log('current list of paths in =>', X);
-    for (const Y of P) {
-      // console.log('X =>', X);
-      // console.log('Y =>', Y);
-      let X_intersect_Y = new Set([...X].filter(Z => Y.has(Z)));
-      let Y_diff_X = new Set([...Y].filter(Z => !X.has(Z)));
-      // console.log('x intersect y =>', X_intersect_Y, ' \n Y - X =>', Y_diff_X);
-      // console.log(Y.size);
-      // console.log(new Set([...Y, ...Y_diff_X]).size);
-      // console.log([...Y, ...X_intersect_Y].size);
-      if (X_intersect_Y.size > 0 && Y_diff_X.size > 0) {
-        if (Y.size === new Set([...Y, ...Y_diff_X]).size && Y.size === new Set([...Y, ...X_intersect_Y]).size) {
-          console.log('they do');
-          break;
-        }
-        P.delete(Y);
-        P.add(X_intersect_Y);
-        P.add(Y_diff_X);
-        // console.log('updated P =>', P);
-        // console.log(' (A, x) form of Y,x =>', Array.from(Y).concat(x));
-        // console.log(' (A, x) form of (X intersect Y, x) =>', Array.from(X_intersect_Y).concat(x));
-        // console.log(' (A, x) form of (Y - X, x) =>', Array.from(Y_diff_X).concat(x));
-        for (const symbol of dfa.alphabet()) {
-          let y_comma_x = Array.from(Y).concat(symbol);
-          let X_intersect_Y_comma_x = Array.from(X_intersect_Y).concat(symbol);
-          let Y_diff_X_comma_x = Array.from(Y_diff_X).concat(symbol);
-          // console.log('does w contain y??? ', W.has(y_comma_x), '\n' , W);
-          if (W.has(y_comma_x)) {
-            W.delete(y_comma_x);
-            W.add(X_intersect_Y_comma_x);
-            W.add(Y_diff_X_comma_x);
-            // console.log('updated W =>', W);
-          } else {
-            // console.log('X_intersect_Y', X_intersect_Y.size, ' \n Y_diff_X', Y_diff_X.size);
-            if (X_intersect_Y.size <= Y_diff_X.size) {
-              W.add(X_intersect_Y_comma_x);
-              // console.log('updated W =>', W);
-            } else {
-              W.add(Y_diff_X_comma_x);
-              // console.log('updated W =>', W);
+    return true;
+  }
+  // set of all states in dfa
+  const Q = new Set(dfa.states());
+  // set of all accept states in dfa
+  const F = new Set(dfa.acceptStates);
+  // set of all the non accept states in dfa
+  const Q_diff_F = new Set([...Q].filter(x => !F.has(x)));
+  // initial partition set, contains coarsest partition: {accept states} | {non accept states}
+  let P = new Set();
+  P.add(F);
+  P.add(Q_diff_F);
+  // work set to update and compare with the partition set
+  let W = new Set();
+  W.add(F);
+  W.add(Q_diff_F);
+  // dfa is considered to be minimized if W(k-1), from the previous iteration, is equal to W(k), from current partition
+  let can_minimize = true;
+  console.log('starting partition', P);
+  console.log('starting work set', W);
+  do {
+    // start the algorithm
+    for (const partition of P) {
+      // compare elements in the set to see if they have equivalence
+      // if partition only has one element then it is at its minimal form, so skip
+      if (partition.size === 1) {
+        continue;
+      } else {
+        // let counter = 0;
+        // if partition has more than one element check if elements in partition are equivalent
+        for (let e = 0; e < partition.size; e++) {
+          // counter += 1;
+          // can't compare anything past end of set so break out of loop at last element
+          if (e + 1 === partition.size) {
+            break;
+          }
+          // comparing the transistions on each input symbol from each set for each letter of the alphabet
+          for (const symbol of dfa.alphabet()) {
+            let current_state = new Set(Array.from(partition)[e]);
+            // check to see if transistions for both states are in the same partition
+            for (const p of P) {
+              // if they are then continue onto the next symbol
+              if (p.has(dfa.transitions[Array.from(partition)[e]][symbol]) === p.has(dfa.transitions[Array.from(partition)[e + 1]][symbol])) {
+                continue;
+              } else {
+                // if not split the partition and add it to the work set and stop the loop
+                W.add(current_state);
+                W.add(new Set([...partition].filter(X => !current_state.has(X))));
+                W.delete(partition);
+                //console.log(P);
+                break;
+              }
             }
           }
         }
       }
     }
+    // if the partition and the work set are equal then P contains the most minimized version of the dfa
+    console.log('updated p', P);
+    console.log('updated w', W);
+    if (are_they_equal(P, W)) {
+      console.log('your new minimized dfa', W);
+      can_minimize = false;
+    }
+    // if P and W are not equal, clear P and set it equal to W and reloop
+    P.clear();
+    P = W;
+
   }
-  console.log('States of minimized dfa are now in P =>', P);
+  while (can_minimize);
+
+  // create the new minimized dfa
   let acceptStates = [];
   let transitions = {};
   let startState = '';
-  for (let [key, value] of Object.entries(dfa.transitions)) {
-    // console.log(key);
-    // console.log(value);
-    for (let [k, v] of Object.entries(value)) {
-      // console.log(k);
-      //  console.log(v);
-
-    }
-  }
-
-  for (const e of P) {
+  for (const e of W) {
     for (const newstate of e) {
       // determining new start state
-      if (newstate ===  dfa.startState) {
-        startState = Array.from(e).join().replace(/,/g, '');
+      if (newstate === dfa.startState) {
+        startState = Array.from(e).join().replace(/,/g, ',');
       }
       // determining new accept state
       for (let prev_accept_state of dfa.acceptStates) {
         if (prev_accept_state === newstate) {
-          acceptStates.push(Array.from(e).join().replace(/,/g, ''));
+          acceptStates.push(Array.from(e).join().replace(/,/g, ','));
           break;
         }
       }
-      // let temp = {};
-      // for (const symbol of dfa.alphabet()) {
-      //   temp[symbol] = '';
-      // }
-      // transitions[Array.from(e).join().replace(/,/g, '')] = temp;
     }
   }
+  // for (const e of P) {
+  //   let temp = {};
+  //   for (let [key, value] of Object.entries(dfa.transitions)) {
+  //     for (let [k, v] of Object.entries(value)) {
+  //       for (const symbol of dfa.alphabet()) {
+  //         temp[symbol] = [...Array.from(P).find(i => i.has(v))].join().replace(/,/g, ',');
+  //         // [...Array.from(P).find(v => v.has(value[symbol]))].join().replace(/,/g, ',')
+  //         // console.log('ung', [...Array.from(P).find(i => i.has(v))].join().replace(/,/g, ','));
+  //         //P.get(P.find(v => v.has(value)));
+  //         //break;
+  //         console.log(Array.from(e).join().replace(/,/g, ','));
+  //         console.log(temp[symbol]);
+  //       }
+  //       transitions[Array.from(e).join().replace(/,/g, ',')] = temp;
+  //       console.log(transitions[Array.from(e).join().replace(/,/g, ',')]);
+  //       // break;
+  //     }
+  //   }
+    // transitions[Array.from(e).join().replace(/,/g, ',')] = temp;
+  // }
+  // console.log(dfa.transitions);
+
   // remove duplicate entries
   acceptStates = acceptStates.filter( function( item, index, inputArray ) {
     return inputArray.indexOf(item) === index;
@@ -243,7 +234,7 @@ export function minimize(dfa) {
   // console.log('new start state =>', startState);
   // console.log('new accept states =>', acceptStates);
   // console.log('new transitions =>', transitions);
-  // const minimized_dfa = new DeterministicFiniteStateMachine({transitions, startState, acceptStates});
-  // console.log('minimized_dfa =>', minimized_dfa);
+  const minimized_dfa = new DeterministicFiniteStateMachine({transitions, startState, acceptStates});
+  console.log('minimized_dfa =>', minimized_dfa);
   return dfa;
 }
