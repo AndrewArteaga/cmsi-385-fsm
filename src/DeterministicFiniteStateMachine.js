@@ -132,9 +132,6 @@ export function minimize(dfa) {
   W.add(F);
   W.add(Q_diff_F);
   // dfa is considered to be minimized if W(k-1), from the previous iteration, is equal to W(k), from current partition
-  let can_minimize = true;
-  console.log('starting partition', P);
-  console.log('starting work set', W);
   do {
     // start the algorithm
     for (const partition of P) {
@@ -143,28 +140,26 @@ export function minimize(dfa) {
       if (partition.size === 1) {
         continue;
       } else {
-        // let counter = 0;
         // if partition has more than one element check if elements in partition are equivalent
         for (let e = 0; e < partition.size; e++) {
-          // counter += 1;
           // can't compare anything past end of set so break out of loop at last element
-          if (e + 1 === partition.size) {
+          if (e === partition.size - 1) {
             break;
           }
           // comparing the transistions on each input symbol from each set for each letter of the alphabet
           for (const symbol of dfa.alphabet()) {
-            let current_state = new Set(Array.from(partition)[e]);
+            let current_state = new Set();
+            current_state.add(Array.from(partition)[e]);
             // check to see if transistions for both states are in the same partition
             for (const p of P) {
               // if they are then continue onto the next symbol
               if (p.has(dfa.transitions[Array.from(partition)[e]][symbol]) === p.has(dfa.transitions[Array.from(partition)[e + 1]][symbol])) {
-                continue;
+                // just don't do anything
               } else {
                 // if not split the partition and add it to the work set and stop the loop
                 W.add(current_state);
                 W.add(new Set([...partition].filter(X => !current_state.has(X))));
                 W.delete(partition);
-                //console.log(P);
                 break;
               }
             }
@@ -173,24 +168,25 @@ export function minimize(dfa) {
       }
     }
     // if the partition and the work set are equal then P contains the most minimized version of the dfa
-    console.log('updated p', P);
-    console.log('updated w', W);
     if (are_they_equal(P, W)) {
-      console.log('your new minimized dfa', W);
-      can_minimize = false;
+      break;
     }
     // if P and W are not equal, clear P and set it equal to W and reloop
     P.clear();
     P = W;
-
   }
-  while (can_minimize);
-
+  while (true);
+  //it is minimized but contains dupes so we got remove the dups
+  let result = [];
+  for (const new_state of W) {
+    result.push(Array.from(new_state).join(','));
+  }
+  const polished_minimized_dfa_states = new Set(result.filter(Boolean));
   // create the new minimized dfa
   let acceptStates = [];
   let transitions = {};
   let startState = '';
-  for (const e of W) {
+  for (const e of P) {
     for (const newstate of e) {
       // determining new start state
       if (newstate === dfa.startState) {
