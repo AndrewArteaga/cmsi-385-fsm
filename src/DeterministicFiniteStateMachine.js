@@ -174,8 +174,7 @@ export function minimize(dfa) {
     // if P and W are not equal, clear P and set it equal to W and reloop
     P.clear();
     P = W;
-  }
-  while (true);
+  } while (true);
   //it is minimized but contains dupes so we got remove the dups
   let result = [];
   for (const new_state of W) {

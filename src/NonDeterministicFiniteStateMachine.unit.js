@@ -1,7 +1,66 @@
-import NonDeterministicFiniteStateMachine, { LAMBDA } from './NonDeterministicFiniteStateMachine';
+import NonDeterministicFiniteStateMachine, { LAMBDA, toDFA } from './NonDeterministicFiniteStateMachine';
 
 const tests = {
+  ndfatodfa1: {
+    convertToDFA: true,
+    description: {
+      transitions: {
+        q0: {
+          0: ['q1', 'q2'],
+        },
+        q1: {
+        },
+        q2: {
+          0: ['q1', 'q2'],
+          1: ['q2'],
+        },
+      },
+      startState: 'q0',
+      acceptStates: ['q1'],
+    },
+
+    tests: {
+      accepts: [
+        '0',
+      ],
+      rejects: [
+        '1',
+      ],
+    }
+  },
+  ndfatodfa2: {
+    convertToDFA: true,
+    description: {
+      transitions: {
+        q0: {
+          0: ['q0'],
+          1: ['q1', 'q2'],
+        },
+        q1: {
+          0: ['q1', 'q2'],
+          1: ['q2'],
+        },
+        q2: {
+          0: ['q0', 'q1'],
+          1: ['q1'],
+        },
+      },
+      startState: 'q0',
+      acceptStates: ['q2'],
+    },
+
+    tests: {
+      accepts: [
+        '1',
+      ],
+      rejects: [
+        '0',
+      ],
+    }
+  },
+
   divisibleBy4: {
+    convertToDFA: false,
     description: {
       transitions: {
         start: {
@@ -38,6 +97,7 @@ const tests = {
     }
   },
   divisibleBy4InfiniteLambda: {
+    convertToDFA: false,
     description: {
       transitions: {
         start: {
@@ -102,6 +162,23 @@ debugger
           expect(`${string}: ${fsm.accepts(string)}`).toEqual(`${string}: false`);
         }
       });
+    });
+  }
+});
+
+describe('toDFA', () => {
+  for (const [key, desc] of Object.entries(tests)) {
+    test(`toDFA(${key})`, () => {
+        const { description, tests, convertToDFA } = desc;
+        const nDfa = new NonDeterministicFiniteStateMachine(description);
+        const dfa = toDFA(nDfa);
+
+        if(convertToDFA) {
+          expect(dfa.states().size).toBeLessThan(nDfa.states().size);
+          for(const string of [...tests.accepts, ...tests.rejects]) {
+            expect(dfa.accepts(string)).toEqual(nDfa.accepts(string));
+          }
+        }
     });
   }
 });
